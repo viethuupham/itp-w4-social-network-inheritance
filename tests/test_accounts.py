@@ -1,6 +1,9 @@
 import unittest
+from datetime import datetime
+
 
 from social_network.accounts import User
+from social_network.posts import Post, TextPost
 from tests.factories import UserFactory, TextPostFactory, PicturePostFactory
 
 
@@ -41,6 +44,7 @@ class TestUser(unittest.TestCase):
 
         user2.add_post(user2_post1)
         user2.add_post(user2_post2)
+        
         user3.add_post(user3_post1)
         user4.add_post(user4_post1)
 
@@ -58,5 +62,41 @@ class TestUser(unittest.TestCase):
         self.assertEqual(user1.get_timeline(), [
             user2_post1,
             user2_post2,
+            user3_post1
+        ])
+    
+    
+    def test_user_get_posts_by_followers1(self):
+        """Should only return posts from users I'm following"""
+        user1 = UserFactory()
+        user2 = UserFactory()
+        user3 = UserFactory()
+        user4 = UserFactory()
+
+        user2_post1 = TextPost('Hello there friends', timestamp=datetime(2017, 2, 2))
+        user2_post2 = TextPost('Hello there friends', timestamp=datetime(2017, 2, 3))
+        user3_post1 = TextPost('Hello there friends', timestamp=datetime(2017, 2, 1))
+        user4_post1 = TextPost('Hello there friends', timestamp=datetime(2017, 2, 3))
+
+        user2.add_post(user2_post1)
+        user2.add_post(user2_post2)
+        
+        user3.add_post(user3_post1)
+        user4.add_post(user4_post1)
+
+        # user1 follows user2 and user3
+        user1.follow(user2)
+        user1.follow(user3)
+
+        # 2 posts from user2 and 1 from user3
+        # post from user4 is excluded
+        self.assertEqual(len(user1.get_timeline()), 3)
+
+        self.assertFalse(user4_post1 in user1.get_timeline())
+
+        # should be sorted by creation timestamp
+        self.assertEqual(user1.get_timeline(), [
+            user2_post2,
+            user2_post1,
             user3_post1
         ])
